@@ -25,6 +25,9 @@ func _ready() -> void:
 
 
 func _detect_server() -> bool:
+	# Explicit overrides win (useful for headless testing of a client).
+	if OS.get_cmdline_user_args().has("--client"):
+		return false
 	if OS.has_feature("dedicated_server"):
 		return true
 	if DisplayServer.get_name() == "headless":

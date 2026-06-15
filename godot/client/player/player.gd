@@ -14,6 +14,9 @@ var _material: StandardMaterial3D
 var _label: Label3D
 
 func setup(color: Color, display_name: String) -> void:
+	# Headless instances (automated tests) track positions but render nothing.
+	if DisplayServer.get_name() == "headless":
+		return
 	var capsule := CapsuleMesh.new()
 	capsule.radius = 0.4
 	capsule.height = 1.8

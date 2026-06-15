@@ -30,6 +30,8 @@ var _views := {}                # entity id -> PlayerView
 var _latest := {}               # entity id -> snapshot dict
 var _my_entity_id := 0
 var _target_id := 0
+var _connected := false
+var _headless := DisplayServer.get_name() == "headless"
 var _in_game := false
 var _pred_init := false
 var _local_pred := Vector3.ZERO
@@ -40,8 +42,8 @@ func _ready() -> void:
 	_build_ui()
 
 	Net.connected_ok.connect(_on_connected)
-	Net.connection_failed.connect(func(): _set_status("Connection failed."))
-	Net.server_closed.connect(func(): _set_status("Disconnected from server."))
+	Net.connection_failed.connect(func(): _connected = false; _set_status("Connection failed. Is the server running? (godot --headless --path godot -- --server)"))
+	Net.server_closed.connect(func(): _connected = false; _set_status("Disconnected from server."))
 	Net.c_login_result.connect(_on_login_result)
 	Net.c_char_list.connect(_on_char_list)
 	Net.c_enter_world_result.connect(_on_enter_world_result)
@@ -61,6 +63,10 @@ func _build_world() -> void:
 	_world = Node3D.new()
 	_world.name = "World"
 	add_child(_world)
+
+	# A headless instance (e.g. an automated connection test) skips all visuals.
+	if _headless:
+		return
 
 	var env := Environment.new()
 	env.background_mode = Environment.BG_COLOR
@@ -166,7 +172,7 @@ func _build_charselect(chars: Array) -> void:
 		var btn := Button.new()
 		btn.text = "%s  (%s)  Lv %s" % [ch.get("name", "?"), ch.get("class_id", "?"), str(ch.get("level", 1))]
 		var cid := String(ch.get("id", ""))
-		btn.pressed.connect(func(): Net.enter_world.rpc_id(1, cid))
+		btn.pressed.connect(func(): _do_enter(cid))
 		v.add_child(btn)
 
 	v.add_child(HSeparator.new())
@@ -199,7 +205,7 @@ func _build_ingame_ui() -> void:
 
 	_chat = ChatPanel.new()
 	_ui.add_child(_chat)
-	_chat.message_submitted.connect(func(t: String): Net.send_chat.rpc_id(1, GameConstants.Channel.GLOBAL, t))
+	_chat.message_submitted.connect(func(t: String): if _connected: Net.send_chat.rpc_id(1, GameConstants.Channel.GLOBAL, t))
 	_chat.add_system("Entered the world. WASD move, 1-4 abilities, Tab target, F loot, Enter chat.")
 
 func _centered_panel() -> Control:
@@ -216,6 +222,8 @@ func _set_status(text: String) -> void:
 
 # --- request helpers ----------------------------------------------------
 func _do_login(is_create: bool) -> void:
+	if not _require_connection():
+		return
 	var u := _name_edit.text.strip_edges()
 	var p := _pass_edit.text
 	if u.is_empty() or p.is_empty():
@@ -224,6 +232,8 @@ func _do_login(is_create: bool) -> void:
 	Net.login.rpc_id(1, u, p, is_create)
 
 func _do_create_char() -> void:
+	if not _require_connection():
+		return
 	var n := _create_name_edit.text.strip_edges()
 	if n.length() < 2:
 		return
@@ -232,12 +242,24 @@ func _do_create_char() -> void:
 		idx = 0
 	Net.create_character.rpc_id(1, n, _class_ids[idx])
 
+func _do_enter(char_id: String) -> void:
+	if _require_connection():
+		Net.enter_world.rpc_id(1, char_id)
+
 func _use_ability(index: int) -> void:
-	if _in_game:
+	if _in_game and _connected:
 		Net.use_ability.rpc_id(1, index, _target_id)
+
+# Returns true if connected; otherwise shows guidance and returns false.
+func _require_connection() -> bool:
+	if _connected:
+		return true
+	_set_status("Not connected yet. Start the server first, then wait for 'Connected'.")
+	return false
 
 # --- server callbacks ---------------------------------------------------
 func _on_connected() -> void:
+	_connected = true
 	_set_status("Connected. Log in or create an account.")
 
 func _on_login_result(ok: bool, message: String) -> void:
@@ -367,12 +389,12 @@ func _process(delta: float) -> void:
 			view.position = _local_pred
 		else:
 			view.position = view.position.lerp(view.target_pos, clampf(12.0 * delta, 0.0, 1.0))
-	if _my_entity_id != 0 and _views.has(_my_entity_id):
+	if _cam != null and _my_entity_id != 0 and _views.has(_my_entity_id):
 		_cam.target = _views[_my_entity_id]
 	_refresh_target_frame()
 
 func _physics_process(delta: float) -> void:
-	if not _in_game or not _views.has(_my_entity_id):
+	if not _in_game or not _connected or not _views.has(_my_entity_id):
 		return
 	var dir := Vector3.ZERO
 	if not _typing():
@@ -437,7 +459,7 @@ func _try_loot() -> void:
 		if d <= best_d:
 			best = id
 			best_d = d
-	if best != 0:
+	if best != 0 and _connected:
 		Net.request_loot.rpc_id(1, best)
 	elif _chat != null:
 		_chat.add_system("No corpse in reach to loot.")
