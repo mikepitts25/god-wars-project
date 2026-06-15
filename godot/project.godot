@@ -1,0 +1,25 @@
+; Engine configuration file.
+; God Wars Reborn — Godot 4 scaffold (see docs/design/).
+
+config_version=5
+
+[application]
+
+config/name="God Wars Reborn"
+config/description="A 2.5D multiplayer reimagining of the classic God Wars MUD."
+run/main_scene="res://boot.tscn"
+config/features=PackedStringArray("4.3")
+
+[autoload]
+
+Net="*res://shared/net/net_manager.gd"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"

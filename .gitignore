@@ -1,0 +1,10 @@
+# Godot 4 editor/import cache and exports
+godot/.godot/
+godot/android/
+*.import
+export_presets.cfg
+*.translation
+
+# Build/exports
+build/
+*.tmp
