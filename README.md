@@ -36,8 +36,18 @@ networking/persistence, UI/UX, and the M0–M4 roadmap.
 - **2.5D** fixed-angle camera, HUD (health/resource/ability bar/target frame), and a
   **global chat + combat log**.
 
-Everything after M1 (PK loot, more classes, clans, quests, polish, deployment) is
-documented in the roadmap.
+## M2 additions (in progress)
+
+- **Three playable classes:** Sanguine, **Moonbound** (Rage; weak to silver), and
+  **Shadowblade** (Focus; fragile) — all data-driven.
+- **Combat depth:** soak mitigation, class **weakness multipliers** (damage types), and
+  **DOT / fear / slow / teleport** effects.
+- **Open-world PK:** combatant flagging + **sanctuary** (no-PK) around the hub.
+- **Death & loot:** lootable, decaying **corpses** with partial gold loot (press **F** to
+  loot in range); gold persists.
+
+Remaining M2 work (inventory/equipment, multiple zones + portals) and everything after
+(clans, quests, polish, deployment) is tracked in the roadmap.
 
 ## Requirements
 
@@ -57,8 +67,9 @@ godot --path godot
 #   godot --path godot -- --host 1.2.3.4 --port 7777
 ```
 
-In each client: create an account → create a **Sanguine** character → enter the world.
-**WASD** to move, **1–4** for abilities, **Tab** to target the dummy, **Enter** to chat.
+In each client: create an account → create a character (**Sanguine / Moonbound /
+Shadowblade**) → enter the world. **WASD** move, **1–4** abilities, **Tab** target,
+**F** loot a nearby corpse, **Enter** chat.
 
 ## Tests
 

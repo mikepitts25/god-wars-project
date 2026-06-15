@@ -8,6 +8,7 @@ extends Node
 const COLOR_LOCAL := Color(0.30, 0.60, 1.00)
 const COLOR_OTHER := Color(0.70, 0.40, 0.90)
 const COLOR_NPC := Color(0.90, 0.30, 0.30)
+const COLOR_CORPSE := Color(0.45, 0.38, 0.30)
 
 var _world: Node3D
 var _cam: FixedCam
@@ -199,7 +200,7 @@ func _build_ingame_ui() -> void:
 	_chat = ChatPanel.new()
 	_ui.add_child(_chat)
 	_chat.message_submitted.connect(func(t: String): Net.send_chat.rpc_id(1, GameConstants.Channel.GLOBAL, t))
-	_chat.add_system("Entered the world. WASD to move, 1-4 abilities, Tab to target, Enter to chat.")
+	_chat.add_system("Entered the world. WASD move, 1-4 abilities, Tab target, F loot, Enter chat.")
 
 func _centered_panel() -> Control:
 	var cc := CenterContainer.new()
@@ -269,7 +270,9 @@ func _on_snapshot(entities: Array) -> void:
 		var server_pos := Vector3(float(e["px"]), 0.0, float(e["pz"]))
 		view.target_pos = server_pos
 		view.set_stealth(bool(e.get("stealth", false)))
-		view.set_dead(not bool(e.get("alive", true)))
+		# Corpses stay visible (alive == false); dead/respawning players are hidden.
+		var is_corpse := int(e.get("kind", GameConstants.Kind.PLAYER)) == GameConstants.Kind.CORPSE
+		view.set_dead(not bool(e.get("alive", true)) and not is_corpse)
 
 		if id == _my_entity_id:
 			if not _pred_init:
@@ -289,12 +292,21 @@ func _on_snapshot(entities: Array) -> void:
 func _on_combat_event(event: Dictionary) -> void:
 	if _chat == null:
 		return
-	var line := "%s uses %s" % [event.get("caster_name", "?"), event.get("ability_name", "?")]
-	if event.has("damage") and event.has("target_name"):
-		line += " — %s takes %d damage" % [event["target_name"], int(event["damage"])]
-	if event.has("killed"):
-		line += " (slain!)"
-	_chat.add_system(line)
+	match String(event.get("type", "cast")):
+		"loot":
+			if int(event.get("looter", 0)) == _my_entity_id:
+				_chat.add_system("You loot %d gold." % int(event.get("gold", 0)))
+		"death":
+			_chat.add_system("%s has fallen." % event.get("victim_name", "Someone"))
+		_:
+			var line := "%s uses %s" % [event.get("caster_name", "?"), event.get("ability_name", "?")]
+			if event.has("damage") and event.has("target_name"):
+				line += " — %s takes %d damage" % [event["target_name"], int(event["damage"])]
+			if event.has("dot") and event.has("target_name"):
+				line += " on %s" % event["target_name"]
+			if event.has("killed"):
+				line += " (slain!)"
+			_chat.add_system(line)
 
 func _on_chat(channel: int, sender: String, text: String) -> void:
 	if _chat == null:
@@ -311,9 +323,12 @@ func _ensure_view(id: int, e: Dictionary) -> PlayerView:
 	var view := PlayerView.new()
 	view.entity_id = id
 	var is_local := id == _my_entity_id
+	var kind := int(e.get("kind", GameConstants.Kind.PLAYER))
 	var color := COLOR_LOCAL
-	if int(e.get("kind", GameConstants.Kind.PLAYER)) == GameConstants.Kind.NPC:
+	if kind == GameConstants.Kind.NPC:
 		color = COLOR_NPC
+	elif kind == GameConstants.Kind.CORPSE:
+		color = COLOR_CORPSE
 	elif not is_local:
 		color = COLOR_OTHER
 	view.is_local = is_local
@@ -342,6 +357,7 @@ func _update_self_hud(e: Dictionary) -> void:
 	if cls != null:
 		res_name = cls.resource_label
 	_hud.set_self_stats(float(e["hp"]), float(e["max_hp"]), float(e["res"]), float(e["max_res"]), res_name)
+	_hud.set_gold(int(e.get("gold", 0)))
 
 # --- frame loops --------------------------------------------------------
 func _process(delta: float) -> void:
@@ -388,6 +404,7 @@ func _input(event: InputEvent) -> void:
 		KEY_2: _use_ability(1)
 		KEY_3: _use_ability(2)
 		KEY_4: _use_ability(3)
+		KEY_F: _try_loot()
 		KEY_TAB: _cycle_target()
 		KEY_ENTER, KEY_KP_ENTER:
 			if _chat != null:
@@ -408,6 +425,22 @@ func _cycle_target() -> void:
 		return
 	var pos := ids.find(_target_id)
 	_target_id = ids[(pos + 1) % ids.size()] if pos != -1 else ids[0]
+
+func _try_loot() -> void:
+	var best := 0
+	var best_d := GameConstants.LOOT_RANGE + 0.01
+	for id in _latest:
+		var e: Dictionary = _latest[id]
+		if int(e.get("kind", GameConstants.Kind.PLAYER)) != GameConstants.Kind.CORPSE:
+			continue
+		var d := _local_pred.distance_to(Vector3(float(e["px"]), 0.0, float(e["pz"])))
+		if d <= best_d:
+			best = id
+			best_d = d
+	if best != 0:
+		Net.request_loot.rpc_id(1, best)
+	elif _chat != null:
+		_chat.add_system("No corpse in reach to loot.")
 
 func _refresh_target_frame() -> void:
 	if _hud == null:

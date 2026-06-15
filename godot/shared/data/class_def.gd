@@ -11,5 +11,8 @@ extends Resource
 @export var resource_label: String = "Resource"   # 'resource_name' is reserved by Resource
 @export var max_resource: float = 100.0
 @export var resource_regen: float = 2.0     # per second
-@export var weakness: String = ""
+@export var soak: float = 0.0               # flat damage reduction
+@export var weakness: String = ""           # human-readable (UI)
+@export var weakness_damage_type: int = -1  # -1 = none; else GameConstants.DamageType
+@export var weakness_mult: float = 1.5      # multiplier applied to weakness damage
 @export var abilities: Array[AbilityDef] = []

@@ -22,6 +22,7 @@ signal s_create_char_requested(peer: int, char_name: String, class_id: String)
 signal s_enter_world_requested(peer: int, char_id: String)
 signal s_input_received(peer: int, move_x: float, move_z: float, yaw: float)
 signal s_ability_requested(peer: int, ability_idx: int, target_id: int)
+signal s_loot_requested(peer: int, corpse_id: int)
 signal s_chat_requested(peer: int, channel: int, text: String)
 
 # Client-side response signals
@@ -84,6 +85,10 @@ func send_input(move_x: float, move_z: float, yaw: float) -> void:
 @rpc("any_peer", "call_remote", "reliable")
 func use_ability(ability_idx: int, target_id: int) -> void:
 	s_ability_requested.emit(multiplayer.get_remote_sender_id(), ability_idx, target_id)
+
+@rpc("any_peer", "call_remote", "reliable")
+func request_loot(corpse_id: int) -> void:
+	s_loot_requested.emit(multiplayer.get_remote_sender_id(), corpse_id)
 
 @rpc("any_peer", "call_remote", "reliable")
 func send_chat(channel: int, text: String) -> void:

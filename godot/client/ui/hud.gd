@@ -9,6 +9,7 @@ signal ability_pressed(index: int)
 var _hp_bar: ProgressBar
 var _res_bar: ProgressBar
 var _res_label: Label
+var _gold_label: Label
 var _target_panel: PanelContainer
 var _target_label: Label
 var _target_hp: ProgressBar
@@ -52,6 +53,9 @@ func _ready() -> void:
 	self_box.add_child(_hp_bar)
 	self_box.add_child(_res_label)
 	self_box.add_child(_res_bar)
+	_gold_label = Label.new()
+	_gold_label.text = "Gold: 0"
+	self_box.add_child(_gold_label)
 	add_child(self_box)
 
 	# --- Ability bar (bottom centre) ---
@@ -82,6 +86,9 @@ func set_self_stats(hp: float, max_hp: float, res: float, max_res: float, res_na
 	_res_label.text = res_name
 	_res_bar.max_value = maxf(1.0, max_res)
 	_res_bar.value = res
+
+func set_gold(amount: int) -> void:
+	_gold_label.text = "Gold: %d" % amount
 
 func set_target(display_name: String, hp: float, max_hp: float) -> void:
 	_target_panel.visible = true

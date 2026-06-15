@@ -35,15 +35,27 @@ The smallest end-to-end "this is the game" loop.
 
 ---
 
-## M2 — PK & breadth
+## M2 — PK & breadth  *(in progress)*
 
 Make it a *player-vs-player* game with more identity.
 
-- **Open-world PK** with flagging, sanctuaries (no-PK hubs), and zone-hazard levers.
-- **Partial loot + corpse retrieval** death stakes (`04`).
-- **+2 classes:** Moonbound and Shadowblade (data-driven), to validate asymmetric balance.
-- **Inventory & equipment** (slots, items, class-tag gear: silver/holy).
-- **Multiple zones + portals** and a basic zone graph; one central hub sanctuary.
+**Implemented (server-authoritative + validated by smoke tests):**
+- **Open-world PK** with combatant **flagging** and **sanctuary** (no-PK) enforcement
+  around the hub.
+- **Partial loot + corpse retrieval:** death drops a lootable corpse holding part of the
+  victim's gold; corpses decay; a looter in range retrieves the gold (`F` key).
+- **+2 classes — Moonbound and Shadowblade** (fully data-driven; they appear in character
+  create and the ability bar with no client changes).
+- **Combat depth:** flat **soak** mitigation and class **weakness multipliers** by damage
+  type (e.g. silver vs Moonbound), plus new effects: **DOT** (bleed/poison), **fear**,
+  **slow**, and **teleport** gap-closers.
+
+**Remaining for M2:**
+- **Inventory & equipment** (slots, items, class-tag gear: silver/holy) and its UI.
+- **Multiple zones + portals** and a basic zone graph (currently one arena + hub
+  sanctuary); requires per-zone interest management on the wire.
+- Client-side polish for PK feedback (flag indicator, status icons).
+
 - **DoD:** two players of different classes can PK in a contested zone, loot/retrieve
   corpses, and retreat to a guarded hub; gear affects outcomes.
 

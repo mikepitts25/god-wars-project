@@ -32,6 +32,7 @@ func _ready() -> void:
 	Net.s_enter_world_requested.connect(_on_enter_world)
 	Net.s_input_received.connect(_on_input)
 	Net.s_ability_requested.connect(_on_ability)
+	Net.s_loot_requested.connect(_on_loot)
 	Net.s_chat_requested.connect(_on_chat)
 
 	print("[server] world ready on port %d (max %d players)" % [GameConstants.DEFAULT_PORT, GameConstants.MAX_CLIENTS])
@@ -112,6 +113,11 @@ func _on_input(peer: int, move_x: float, move_z: float, yaw: float) -> void:
 
 func _on_ability(peer: int, ability_idx: int, target_id: int) -> void:
 	var event := _world.request_ability(peer, ability_idx, target_id)
+	if event.get("ok", false):
+		Net.combat_event.rpc(event)
+
+func _on_loot(peer: int, corpse_id: int) -> void:
+	var event := _world.request_loot(peer, corpse_id)
 	if event.get("ok", false):
 		Net.combat_event.rpc(event)
 

@@ -12,5 +12,7 @@ extends Resource
 @export var cooldown: float = 1.0      # seconds
 @export var cast_range: float = 3.0    # metres (named cast_range; `range` is reserved)
 @export var effect: int = GameConstants.Effect.DAMAGE
-@export var power: float = 0.0         # damage / heal / drain magnitude
-@export var duration: float = 0.0      # status duration for buffs/stealth
+@export var power: float = 0.0         # damage / heal / drain magnitude (per tick for DOT)
+@export var duration: float = 0.0      # status / DOT total duration
+@export var tick: float = 1.0          # DOT tick interval (seconds)
+@export var damage_type: int = GameConstants.DamageType.PHYSICAL
