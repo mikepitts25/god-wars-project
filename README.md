@@ -55,7 +55,16 @@ Remaining M2 work (inventory/equipment, multiple zones + portals) and everything
 
 ## Running
 
-From the repo root:
+**You always need a server running plus one or more clients** — launching only a
+client (e.g. the editor) leaves it unconnected and login will fail.
+
+The quickest way to start the server (auto-detects Godot, incl. `Godot.app` on macOS):
+
+```bash
+./run-server.sh
+```
+
+Or invoke Godot directly from the repo root:
 
 ```bash
 # 1) Start the authoritative server (headless, binds UDP 7777)
